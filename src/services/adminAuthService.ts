@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import { tokenUtils } from './clientApiService';
 
 export class AdminAuthService {
   static async createDefaultAdmin() {
@@ -43,7 +44,6 @@ export class AdminAuthService {
       throw new Error('Invalid credentials');
     }
 
-    // Update last login
     await db.collection('admins').updateOne(
       { _id: admin._id },
       { $set: { lastLogin: new Date() } }
@@ -53,11 +53,14 @@ export class AdminAuthService {
       { 
         adminId: admin._id.toString(), 
         email: admin.email,
-        role: admin.role
+        role: admin.role,
+        isAdmin: true 
       },
       Buffer.from(process.env.JWT_SECRET as string),
       { expiresIn: process.env.JWT_EXPIRES_IN ?? "1h" } as SignOptions
     );
+
+    tokenUtils.setAdminToken(token);
 
     return {
       admin: {
@@ -70,5 +73,21 @@ export class AdminAuthService {
       },
       token
     };
+  }
+
+  static async logoutAdmin(): Promise<void> {
+    // Clear the token when admin logs out
+    tokenUtils.clearAdminToken();
+    console.log('Admin logged out and client backend token cleared');
+  }
+
+  // Validate token for client backend communication
+  static validateTokenForClientBackend(token: string): boolean {
+    try {
+      const decoded = jwt.verify(token, Buffer.from(process.env.JWT_SECRET as string)) as any;
+      return !!(decoded && decoded.isAdmin);
+    } catch (error) {
+      return false;
+    }
   }
 }

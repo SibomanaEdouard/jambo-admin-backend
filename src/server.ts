@@ -19,7 +19,7 @@ app.use(helmet());
 app.use(securityHeaders);
 app.use(requestLogger);
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3001',
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true
 }));
 

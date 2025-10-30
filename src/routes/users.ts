@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { 
-  getAllUsers, 
-  getUserDetails, 
+  getAllUsers,  
   verifyDevice, 
   getDashboardStats 
 } from '../controllers/userManagementController';
@@ -11,9 +10,9 @@ const router = Router();
 
 router.use(authenticateAdmin);
 
+
+router.get('', getAllUsers);
 router.get('/dashboard/stats', getDashboardStats);
-router.get('/', getAllUsers);
-router.get('/:userId', getUserDetails);
-router.post('/verify-device', verifyDevice);
+router.post('/:userId/verify-device', verifyDevice);
 
 export default router;

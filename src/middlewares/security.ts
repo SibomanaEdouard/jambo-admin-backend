@@ -39,7 +39,6 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
 
 // Security headers middleware
 export const securityHeaders = (req: Request, res: Response, next: NextFunction): void => {
-  // Remove X-Powered-By header
   res.removeHeader('X-Powered-By');
   
   // Set security headers

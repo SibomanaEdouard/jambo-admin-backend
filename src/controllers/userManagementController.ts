@@ -9,7 +9,21 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string || '';
 
-    const result = await UserManagementService.getAllUsers(page, limit, search);
+    // Get the token from the current admin request
+    const adminToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    console.log('🔐 Controller - Making users request with token:', {
+      hasToken: !!adminToken,
+      tokenLength: adminToken?.length,
+      adminId: req.admin?._id
+    });
+
+    const result = await UserManagementService.getAllUsers(
+      page, 
+      limit, 
+      search,
+      adminToken  
+    );
     
     // Log the action
     await AuditLogService.logAction(
@@ -21,34 +35,39 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
 
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const getUserDetails = async (req: AuthRequest, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const userDetails = await UserManagementService.getUserDetails(userId);
-    
-    // Log the action
-    await AuditLogService.logAction(
-      'VIEW_USER_DETAILS',
-      req.admin._id,
-      req,
-      { userId },
-      userId
-    );
-
-    res.json(userDetails);
-  } catch (error: any) {
+    console.error('❌ Controller error fetching users:', error);
     res.status(400).json({ message: error.message });
   }
 };
 
 export const verifyDevice = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, deviceId } = req.body;
-    const result = await UserManagementService.verifyUserDevice(userId, deviceId);
+    const { userId } = req.params;
+    const { deviceId } = req.body;
+    
+    // Validate inputs
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+    
+    if (!deviceId) {
+      return res.status(400).json({ message: 'Device ID is required' });
+    }
+    
+    // Get the token from the current admin request
+    const adminToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    console.log('🔐 Controller - Verifying device with token:', {
+      hasToken: !!adminToken,
+      userId,
+      deviceId
+    });
+
+    const result = await UserManagementService.verifyUserDevice(
+      userId, 
+      deviceId,
+      adminToken
+    );
     
     // Log the action
     await AuditLogService.logAction(
@@ -59,15 +78,25 @@ export const verifyDevice = async (req: AuthRequest, res: Response) => {
       userId
     );
 
-    res.json(result);
+    return res.json(result); 
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    console.error('❌ Controller error verifying device:', error);
+    return res.status(400).json({ message: error.message }); 
   }
 };
 
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
-    const stats = await UserManagementService.getDashboardStats();
+    // Get the token from the current admin request
+    const adminToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    console.log('🔐 Controller - Getting dashboard stats with token:', {
+      hasToken: !!adminToken
+    });
+
+    const stats = await UserManagementService.getDashboardStats(
+      adminToken 
+    );
     
     // Log the action
     await AuditLogService.logAction(
@@ -79,6 +108,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
 
     res.json(stats);
   } catch (error: any) {
+    console.error('❌ Controller error fetching dashboard stats:', error);
     res.status(400).json({ message: error.message });
   }
 };
