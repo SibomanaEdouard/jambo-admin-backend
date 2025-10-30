@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  admin-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: admin-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - PORT=5001
+      - MONGODB_URI=mongodb://127.0.0.1:27017/savings_admin
+      - JWT_SECRET=your-production-jwt-secret-change-this
+      - JWT_EXPIRES_IN=1d
+      - ADMIN_ACCESS_TOKEN=your_admin_access_token_here
+      - CLIENT_URL=http://localhost:5000
+      - CLIENT_URL=http://localhost:3000
+    depends_on:
+      - mongodb
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - admin-network
+
+  mongodb:
+    image: mongo:6.0
+    container_name: admin-mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=admin-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    restart: unless-stopped
+    networks:
+      - admin-network
+
+  # Optional: Add Redis for session storage or caching
+  redis:
+    image: redis:7-alpine
+    container_name: admin-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - admin-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  admin-network:
+    driver: bridge
